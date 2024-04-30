@@ -140,4 +140,8 @@ impl<C: Codec> Server<C> {
         self.last_id += 1;
         self.last_id
     }
+
+    fn kick(&mut self, id: ClientId) {
+        todo!();
+    }
 }
