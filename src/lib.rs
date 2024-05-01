@@ -141,7 +141,9 @@ impl<C: Codec> Server<C> {
         self.last_id
     }
 
-    fn kick(&mut self, id: ClientId) {
-        todo!();
+    pub fn kick(&mut self, id: ClientId) {
+        if let Some(codec) = self.codecs.iter_mut().find(|c| c.id() == id) {
+            codec.shutdown();
+        }
     }
 }
