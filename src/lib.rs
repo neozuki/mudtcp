@@ -8,17 +8,29 @@ pub type ClientId = usize;
 #[derive(Error, Debug)]
 pub enum ServerError {
     #[error("failed to bind server to address `{addr:?}`: {e:?}")]
-    Bind { addr: String, e: io::Error },
+    Bind {
+        addr: String,
+        #[source]
+        e: io::Error,
+    },
     #[error("error polling listener socket: {0}")]
-    Listener(io::Error),
+    Listener(#[source] io::Error),
     #[error("error accepting new client: {0}")]
-    Accept(io::Error),
+    Accept(#[source] io::Error),
     #[error("error reading from client#{id:?}: {error:?}")]
-    Read { id: ClientId, error: io::Error },
+    Read {
+        id: ClientId,
+        #[source]
+        error: io::Error,
+    },
     #[error("error writing to client#{id:?}: {error:?}")]
-    Write { id: ClientId, error: io::Error },
+    Write {
+        id: ClientId,
+        #[source]
+        error: io::Error,
+    },
     #[error("id `{0}` not found")]
-    NotFound(ClientId),
+    IdNotFound(ClientId),
 }
 
 #[derive(Debug)]
@@ -152,7 +164,7 @@ impl<C: Codec> Server<C> {
                 println!(
                     "Unable to send message to Client#{}: No match for Message ClientId",
                     id
-                );
+                ); /* should generate some 'SendFail' event */
             }
         }
     }
@@ -170,7 +182,7 @@ impl<C: Codec> Server<C> {
             codec.shutdown();
             Ok(())
         } else {
-            Err(ServerError::NotFound(id))
+            Err(ServerError::IdNotFound(id))
         }
     }
 }
