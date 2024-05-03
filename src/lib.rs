@@ -185,4 +185,16 @@ impl<C: Codec> Server<C> {
             Err(ServerError::IdNotFound(id))
         }
     }
+
+    pub fn ids(&self) -> impl Iterator<Item = (ClientId, bool)> + '_ {
+        self.codecs.iter().map(|c| (c.id(), c.is_open()))
+    }
+
+    pub fn ids_connected(&self) -> impl Iterator<Item = ClientId> + '_ {
+        self.codecs.iter().filter(|&c| c.is_open()).map(|c| c.id())
+    }
+
+    pub fn ids_disconnected(&self) -> impl Iterator<Item = ClientId> + '_ {
+        self.codecs.iter().filter(|&c| !c.is_open()).map(|c| c.id())
+    }
 }

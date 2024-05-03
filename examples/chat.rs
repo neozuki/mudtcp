@@ -15,21 +15,17 @@ fn main() {
     let mut server = Server::<LineCodec>::new(addr.as_str()).expect("Failed to create server");
     println!("Server started with address \"{addr}\"");
 
-    let mut ids: Vec<ClientId> = vec![];
     loop {
-        let mut message_in: Vec<String> = vec![];
-        let mut message_out: Vec<(ClientId, String)> = vec![];
+        let mut msg_in: Vec<(ClientId, String)> = vec![];
+        let mut msg_out: Vec<(ClientId, String)> = vec![];
         for ev in server.poll() {
             match ev {
                 Event::Join(id) => {
                     println!("Event: Client joined with id {id}.");
-                    ids.push(id);
-                    message_out.push((id, MOTD.to_owned()));
+                    msg_out.push((id, MOTD.to_owned()));
                 }
                 Event::Leave(id) => {
                     println!("Event: Client with id {id} left.");
-                    let index = ids.iter().position(|_id| *_id == id).expect("ID not found");
-                    ids.remove(index);
                 }
                 Event::Receive(msg) => {
                     println!(
@@ -37,13 +33,11 @@ fn main() {
                         msg.1.len(),
                         msg.0,
                     );
-                    message_in.push(format!("Client[{}] says, \"{}\"", msg.0, msg.1));
+                    msg_in.push(msg);
                 }
                 Event::Send(_) => {}
                 Event::ClientError((id, e)) => {
                     println!("Event: Client with id {id} error: {e}.");
-                    let index = ids.iter().position(|_id| *_id == id).expect("ID not found");
-                    ids.remove(index);
                 }
                 Event::ServerError(e) => {
                     println!("Event: Server error: {e}.");
@@ -51,14 +45,11 @@ fn main() {
                 }
             }
         }
-
-        ids.iter().for_each(|id| {
-            for m in message_in.iter() {
-                message_out.push((*id, m.clone()));
+        server.ids_connected().for_each(|id| {
+            for m in &msg_in {
+                msg_out.push((id, format!("anonymous#{} says, \"{}\"", m.0, m.1)));
             }
         });
-
-        server.enqueue_many(message_out.into_iter());
+        server.enqueue_many(msg_out.into_iter());
     }
-    //cleanup
 }
